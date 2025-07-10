@@ -23,7 +23,13 @@
     <input type="file" id="fileInput" />
     <button onclick="upload()">Upload & Scan</button>
 
+    <div id="spinner" style="display:none; margin-top:1rem;">🔄 Scanning...</div>
     <div id="output"></div>
+
+    <footer style="margin-top:2rem; font-size:0.9rem; color:#555;">
+      By uploading a file you agree to the
+      <a href="/privacy" target="_blank">privacy policy</a>.
+    </footer>
 
     <script>
       function upload() {
@@ -35,6 +41,8 @@
         const file = input.files[0];
         const body = new FormData();
         body.append("file", file);
+
+        document.getElementById("spinner").style.display = "block";
 
         fetch("/upload", { method: "POST", body })
           .then((r) => r.json())
@@ -53,7 +61,10 @@
             .then((r) => r.json())
             .then((data) => {
               show(data);
-              if (data.status && data.status !== "processing") clearInterval(timer);
+              if (data.status && data.status !== "processing") {
+                clearInterval(timer);
+                document.getElementById("spinner").style.display = "none";
+              }
             })
             .catch(() => clearInterval(timer));
         }, 2000);

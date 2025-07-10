@@ -22,6 +22,26 @@ async def index():
     return FileResponse(frontend_path / "index.html")
 
 
+# ---------------------------------------------------------------------------
+# Privacy / GDPR
+# ---------------------------------------------------------------------------
+
+
+PRIVACY_TEXT = (
+    "This service temporarily stores the files you upload strictly for the purpose "
+    "of security analysis. Files and derived metadata are automatically deleted "
+    "within 24 hours. No personal identifiers are retained. By uploading a file "
+    "you consent to the transfer of the file hash to third-party threat-intelligence "
+    "providers (e.g., VirusTotal). See README for full policy."
+)
+
+
+@app.get("/privacy", tags=["Legal"])
+async def privacy():
+    """Return GDPR/CCPA compliance notice."""
+    return {"privacy": PRIVACY_TEXT}
+
+
 if __name__ == "__main__":
     import uvicorn
 

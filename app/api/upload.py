@@ -1,10 +1,10 @@
 from pathlib import Path
 import hashlib
-import uuid
 
 from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
 
 from app.services import analyzer
+from app.core import config
 
 router = APIRouter()
 
@@ -17,14 +17,21 @@ async def upload_file(
     if not file.filename:
         raise HTTPException(status_code=400, detail="Filename not provided")
 
+    # Validate file extension
+    ext = Path(file.filename).suffix.lower()
+    if ext not in config.ALLOWED_EXT:
+        raise HTTPException(status_code=400, detail=f"Extension '{ext}' not allowed")
+
     # Read the entire file into memory (fine for workshop-sized files)
     data = await file.read()
 
+    if len(data) > config.MAX_FILE_SIZE:
+        mb = config.MAX_FILE_SIZE / (1024 * 1024)
+        raise HTTPException(status_code=400, detail=f"Max file size exceeded ({mb} MB)")
+
     # Compute hash & build deterministic filename
     sha256 = hashlib.sha256(data).hexdigest()
-    tmp_dir = Path("/tmp/analyzer_uploads")
-    tmp_dir.mkdir(parents=True, exist_ok=True)
-    file_path = tmp_dir / f"{sha256}_{file.filename}"
+    file_path = config.TMP_DIR / f"{sha256}_{file.filename}"
 
     with file_path.open("wb") as dst:
         dst.write(data)
