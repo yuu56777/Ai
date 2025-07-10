@@ -3,65 +3,46 @@
   <head>
     <meta charset="utf-8" />
     <title>Analysis Report</title>
-    <style>
-      body {
-        font-family: Arial, Helvetica, sans-serif;
-        margin: 1rem;
-      }
-      h1 {
-        color: #333;
-      }
-      .verdict.clean {
-        color: green;
-      }
-      .verdict.suspicious {
-        color: #d97300;
-      }
-      .verdict.malicious {
-        color: red;
-      }
-      table {
-        border-collapse: collapse;
-        margin-top: 0.5rem;
-      }
-      th,
-      td {
-        border: 1px solid #ccc;
-        padding: 4px 8px;
-      }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body>
-    <h1>File Security Analysis Report</h1>
+    <h1 class="text-2xl font-semibold mb-4">File Security Analysis Report</h1>
 
-    <p>
+    <p class="mb-4">
       Verdict:
-      <strong class="verdict {{ verdict }}">{{ verdict|capitalize }}</strong>
+      <span
+        class="px-2 py-1 rounded text-white {{ 'bg-green-600' if verdict=='clean' else 'bg-red-600' if verdict=='malicious' else 'bg-yellow-600' }}"
+        >{{ verdict|capitalize }}</span
+      >
     </p>
 
     {% if vt_summary %}
-    <h2>VirusTotal Summary</h2>
-    <table>
-      <tr>
-        <th>Category</th>
-        <th>Count</th>
-      </tr>
-      {% for k, v in vt_summary.items() %}
-      <tr>
-        <td>{{ k }}</td>
-        <td>{{ v }}</td>
-      </tr>
-      {% endfor %}
+    <h2 class="text-xl font-semibold mt-6 mb-2">VirusTotal Summary</h2>
+    <table class="min-w-full border divide-y divide-gray-200">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Category</th>
+          <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Count</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        {% for k, v in vt_summary.items() %}
+        <tr>
+          <td class="px-4 py-2 text-sm text-gray-700">{{ k }}</td>
+          <td class="px-4 py-2 text-sm text-gray-700">{{ v }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
     </table>
     {% endif %}
 
-    <h2>Recommendations</h2>
-    <ul>
+    <h2 class="text-xl font-semibold mt-6 mb-2">Recommendations</h2>
+    <ul class="list-disc list-inside text-gray-700">
       {% for rec in recommendations %}
-      <li>{{ rec }}</li>
+      <li class="mb-1">{{ rec }}</li>
       {% endfor %}
     </ul>
 
-    <p style="font-size: 0.8rem; color: #555;">SHA-256: {{ sha256 }}</p>
+    <p class="text-xs text-gray-500 mt-6">SHA-256: {{ sha256 }}</p>
   </body>
 </html>
