@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cybersecurity File Analyzer</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        margin: 2rem;
+      }
+      #output {
+        white-space: pre-wrap;
+        background: #f5f5f5;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="max-w-3xl mx-auto mt-10 p-6 bg-white shadow rounded">
+      <h1 class="text-2xl font-semibold mb-6 text-center">
+        AI Cybersecurity Fraud Detection
+      </h1>
+
+      <div
+        id="dropZone"
+        class="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 p-8 rounded cursor-pointer hover:bg-gray-50"
+      >
+        <svg
+          class="w-12 h-12 text-gray-400 mb-3"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 0l-4 4m4-4l4 4"
+          ></path>
+        </svg>
+        <p class="text-gray-600">
+          Drag & drop a file here, or
+          <span class="text-indigo-600 underline">browse</span>
+        </p>
+        <input type="file" id="fileInput" class="hidden" />
+      </div>
+
+      <button
+        onclick="upload()"
+        class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded"
+      >
+        Upload &amp; Scan
+      </button>
+
+      <div id="progressWrapper" class="w-full mt-6 hidden">
+        <div class="flex items-center mb-2">
+          <span class="text-sm text-gray-700 mr-2">Scanning...</span>
+          <svg class="animate-spin h-4 w-4 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-200">
+          <div id="progressBar" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <div id="reportContainer" class="mt-8"></div>
+
+      <p class="text-xs text-gray-500 mt-10 text-center">
+        By uploading a file you agree to the
+        <a
+          href="/privacy"
+          target="_blank"
+          class="text-indigo-600 underline"
+          >privacy policy</a
+        >.
+      </p>
+    </div>
+
+    <script>
+      function upload() {
+        const input = document.getElementById("fileInput");
+        if (!input.files.length) {
+          alert("Please choose a file first.");
+          return;
+        }
+        const file = input.files[0];
+        const body = new FormData();
+        body.append("file", file);
+
+        document.getElementById("progressWrapper").classList.remove("hidden");
+        document.getElementById("reportContainer").innerHTML = "";
+        document.getElementById("progressBar").style.width = "0%";
+
+        fetch("/upload", { method: "POST", body })
+          .then((r) => r.json())
+          .then((data) => {
+            show(data);
+            if (data.job_id) poll(data.job_id);
+          })
+          .catch((err) => {
+            show({ error: err.toString() });
+          });
+      }
+
+      function poll(jobId) {
+        const timer = setInterval(() => {
+          fetch(`/report/${jobId}`)
+            .then((r) => r.json())
+            .then((data) => {
+              show(data);
+              // Update fake progress bar (increments until completion)
+              const bar = document.getElementById("progressBar");
+              const currentWidth = parseInt(bar.style.width);
+              if (currentWidth < 90) {
+                bar.style.width = currentWidth + 10 + "%";
+              }
+              if (data.status && data.status !== "processing") {
+                clearInterval(timer);
+                document.getElementById("progressBar").style.width = "100%";
+                document.getElementById("progressWrapper").classList.add("hidden");
+
+                fetch(`/report/${jobId}/html`)
+                  .then((r) => r.text())
+                  .then((html) => {
+                    displayReport(jobId, html);
+                  });
+              }
+            })
+            .catch(() => clearInterval(timer));
+        }, 2000);
+      }
+
+      function show(obj) {
+        // fallback text output (debug)
+        console.log(obj);
+      }
+
+      function displayReport(jobId, html) {
+        const container = document.getElementById("reportContainer");
+        container.innerHTML = html;
+
+        // Add feedback section
+        const fbDiv = document.createElement("div");
+        fbDiv.style.marginTop = "1rem";
+        fbDiv.innerHTML = `
+          <h3>Was this analysis correct?</h3>
+          <button id="fb_correct">Correct</button>
+          <button id="fb_fp">False Positive</button>
+          <button id="fb_fn">False Negative</button>
+          <span id="fb_msg" style="margin-left:1rem; color:green;"></span>
+        `;
+        container.appendChild(fbDiv);
+
+        const send = (verdict) => {
+          fetch("/feedback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ job_id: jobId, user_verdict: verdict }),
+          })
+            .then(() => {
+              document.getElementById("fb_msg").textContent = "Thank you!";
+            })
+            .catch(() => {
+              document.getElementById("fb_msg").textContent = "Error submitting feedback";
+            });
+        };
+
+        document.getElementById("fb_correct").onclick = () => send("correct");
+        document.getElementById("fb_fp").onclick = () => send("false_positive");
+        document.getElementById("fb_fn").onclick = () => send("false_negative");
+      }
+
+      // Drag / Drop handling
+      const dropZone = document.getElementById("dropZone");
+      dropZone.addEventListener("click", () => document.getElementById("fileInput").click());
+      dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("bg-gray-100");
+      });
+      dropZone.addEventListener("dragleave", () => dropZone.classList.remove("bg-gray-100"));
+      dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("bg-gray-100");
+        document.getElementById("fileInput").files = e.dataTransfer.files;
+      });
+    </script>
+  </body>
+</html>
