@@ -70,4 +70,4 @@ class SystemMetrics(Base):
     metric_name = Column(String)
     metric_value = Column(Float)
     recorded_at = Column(DateTime(timezone=True), server_default=func.now())
-    metadata = Column(JSON)
+    metric_metadata = Column(JSON)

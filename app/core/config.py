@@ -32,8 +32,14 @@ class Settings(BaseSettings):
     # API Rate limiting
     api_rate_limit: int = 100  # requests per hour
     
+    # Server settings (for deployment)
+    debug: bool = False
+    host: str = "0.0.0.0"
+    port: int = 8000
+    
     class Config:
         env_file = ".env"
+        extra = "allow"  # Allow extra fields from environment
 
 settings = Settings()
 
