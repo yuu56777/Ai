@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Analysis Report</title>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        margin: 1rem;
+      }
+      h1 {
+        color: #333;
+      }
+      .verdict.clean {
+        color: green;
+      }
+      .verdict.suspicious {
+        color: #d97300;
+      }
+      .verdict.malicious {
+        color: red;
+      }
+      table {
+        border-collapse: collapse;
+        margin-top: 0.5rem;
+      }
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 4px 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>File Security Analysis Report</h1>
+
+    <p>
+      Verdict:
+      <strong class="verdict {{ verdict }}">{{ verdict|capitalize }}</strong>
+    </p>
+
+    {% if vt_summary %}
+    <h2>VirusTotal Summary</h2>
+    <table>
+      <tr>
+        <th>Category</th>
+        <th>Count</th>
+      </tr>
+      {% for k, v in vt_summary.items() %}
+      <tr>
+        <td>{{ k }}</td>
+        <td>{{ v }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% endif %}
+
+    <h2>Recommendations</h2>
+    <ul>
+      {% for rec in recommendations %}
+      <li>{{ rec }}</li>
+      {% endfor %}
+    </ul>
+
+    <p style="font-size: 0.8rem; color: #555;">SHA-256: {{ sha256 }}</p>
+  </body>
+</html>

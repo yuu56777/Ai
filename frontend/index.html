@@ -24,7 +24,7 @@
     <button onclick="upload()">Upload & Scan</button>
 
     <div id="spinner" style="display:none; margin-top:1rem;">🔄 Scanning...</div>
-    <div id="output"></div>
+    <div id="reportContainer"></div>
 
     <footer style="margin-top:2rem; font-size:0.9rem; color:#555;">
       By uploading a file you agree to the
@@ -43,6 +43,7 @@
         body.append("file", file);
 
         document.getElementById("spinner").style.display = "block";
+        document.getElementById("reportContainer").innerHTML = "";
 
         fetch("/upload", { method: "POST", body })
           .then((r) => r.json())
@@ -64,6 +65,12 @@
               if (data.status && data.status !== "processing") {
                 clearInterval(timer);
                 document.getElementById("spinner").style.display = "none";
+
+                fetch(`/report/${jobId}/html`)
+                  .then((r) => r.text())
+                  .then((html) => {
+                    displayReport(jobId, html);
+                  });
               }
             })
             .catch(() => clearInterval(timer));
@@ -71,7 +78,43 @@
       }
 
       function show(obj) {
-        document.getElementById("output").textContent = JSON.stringify(obj, null, 2);
+        // fallback text output (debug)
+        console.log(obj);
+      }
+
+      function displayReport(jobId, html) {
+        const container = document.getElementById("reportContainer");
+        container.innerHTML = html;
+
+        // Add feedback section
+        const fbDiv = document.createElement("div");
+        fbDiv.style.marginTop = "1rem";
+        fbDiv.innerHTML = `
+          <h3>Was this analysis correct?</h3>
+          <button id="fb_correct">Correct</button>
+          <button id="fb_fp">False Positive</button>
+          <button id="fb_fn">False Negative</button>
+          <span id="fb_msg" style="margin-left:1rem; color:green;"></span>
+        `;
+        container.appendChild(fbDiv);
+
+        const send = (verdict) => {
+          fetch("/feedback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ job_id: jobId, user_verdict: verdict }),
+          })
+            .then(() => {
+              document.getElementById("fb_msg").textContent = "Thank you!";
+            })
+            .catch(() => {
+              document.getElementById("fb_msg").textContent = "Error submitting feedback";
+            });
+        };
+
+        document.getElementById("fb_correct").onclick = () => send("correct");
+        document.getElementById("fb_fp").onclick = () => send("false_positive");
+        document.getElementById("fb_fn").onclick = () => send("false_negative");
       }
     </script>
   </body>

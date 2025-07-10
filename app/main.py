@@ -5,11 +5,15 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api import upload as upload_router
+from app.api import report as report_router
+from app.api import feedback as feedback_router
 
 app = FastAPI(title="Cybersecurity Fraud Detection API")
 
 # Include API routes
 app.include_router(upload_router.router)
+app.include_router(report_router.router)
+app.include_router(feedback_router.router)
 
 # Serve simple frontend
 frontend_path = Path(__file__).parent.parent / "frontend"

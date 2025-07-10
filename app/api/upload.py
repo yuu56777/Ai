@@ -41,12 +41,3 @@ async def upload_file(
     background_tasks.add_task(analyzer.run_analysis, job_id, file_path)
 
     return {"job_id": job_id, "status": "processing"}
-
-
-@router.get("/report/{job_id}")
-def get_report(job_id: str):
-    """Retrieve analysis results for a given job ID."""
-    job = analyzer.get_job(job_id)
-    if job is None:
-        raise HTTPException(status_code=404, detail="Job not found")
-    return job
