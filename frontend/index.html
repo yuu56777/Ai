@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cybersecurity File Analyzer</title>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        margin: 2rem;
+      }
+      #output {
+        white-space: pre-wrap;
+        background: #f5f5f5;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>AI Cybersecurity Fraud Detection – File Upload</h1>
+    <input type="file" id="fileInput" />
+    <button onclick="upload()">Upload & Scan</button>
+
+    <div id="output"></div>
+
+    <script>
+      function upload() {
+        const input = document.getElementById("fileInput");
+        if (!input.files.length) {
+          alert("Please choose a file first.");
+          return;
+        }
+        const file = input.files[0];
+        const body = new FormData();
+        body.append("file", file);
+
+        fetch("/upload", { method: "POST", body })
+          .then((r) => r.json())
+          .then((data) => {
+            show(data);
+            if (data.job_id) poll(data.job_id);
+          })
+          .catch((err) => {
+            show({ error: err.toString() });
+          });
+      }
+
+      function poll(jobId) {
+        const timer = setInterval(() => {
+          fetch(`/report/${jobId}`)
+            .then((r) => r.json())
+            .then((data) => {
+              show(data);
+              if (data.status && data.status !== "processing") clearInterval(timer);
+            })
+            .catch(() => clearInterval(timer));
+        }, 2000);
+      }
+
+      function show(obj) {
+        document.getElementById("output").textContent = JSON.stringify(obj, null, 2);
+      }
+    </script>
+  </body>
+</html>
